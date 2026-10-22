@@ -1,95 +1,190 @@
-
 # re-plants-vs-zombies
 
-A project focused on decompiling the latest functionality from the first PvZ title and expand upon the game and its engine
+[English / 上游原始说明](README_en.md)
 
-The SexyAppFramework dating as back as 2005 is a very old game engine and it does not follow proper C++ conventions as per modern standards nor does it use a modern renderer backend
+《植物大战僵尸》初代的非官方 C++ 重实现与扩展项目。本仓库基于已有的逆向工程项目继续开发，包含游戏逻辑、SexyAppFramework 引擎和 TodLib 动画特效代码，可用于阅读实现、修改玩法和开展二次开发。
 
-This project aims to modernize the engine by using features from the latest C++ standards aswell as replacing the old legacy DirectDraw and Direct3D7 renderers for the modern [GLFW](https://www.glfw.org/) cross-platform wrapper aswell as expanding upon an old (now deleted) decompilation project of PvZ version 0.9.9 by [Miya aka Kopie](https://github.com/rspforhp) to get the best possible PvZ experience both for modders and players alike
+当前已在 Windows 上使用 CLion 2025.3.1、MinGW GCC 13.1.0、CMake 4.2 和 Ninja 完成 Debug 编译及链接。游戏运行与完整流程尚未验证，仓库仍包含未完成的实现。
 
-# DISCLAIMER
+## 当前状态
 
-This project does not condone piracy
+- 使用 C / C++，C++ 标准为 C++23，通过 CMake 构建。
+- 主要开发与验证环境为 Windows，代码仍依赖 Win32、DirectDraw / Direct3D 和 DirectSound 等接口。
+- 原项目提出了 GLFW 和跨平台迁移目标，当前构建仍使用旧渲染代码，不能据此视为已经完成迁移。
+- 包含冒险关卡、植物、僵尸、商店、图鉴、禅境花园，以及成就和 Zombatar 等相关代码；存在代码并不代表对应功能已经完整可用。
+- 仓库不包含原版游戏的完整美术、音乐和其他运行资源。运行需要自行准备合法获得的原版游戏文件。
 
-This project does not include any IP from PopCap outside of their open source game engine, this will only output the executable for a decompiled, fan version of PvZ
+## 快速开始
 
-To play the game using this project you need to have access to the original game files by [purchasing it](https://store.steampowered.com/app/3590/Plants_vs_Zombies_GOTY_Edition/)
+### 获取源码
 
-## Roadmap
+```powershell
+git clone https://github.com/Interweave05/re-plants-vs-zombies.git
+cd re-plants-vs-zombies
+```
 
-#### Currently focused on
-- [x] Add x64 support for the base game **(Partial)**
-- [ ] Replace the old renderer backend for GLFW **(WIP)**
-- [ ] Replace all Windows only code for cross-platform GLFW counterparts **(WIP)**
+### 使用 CLion 构建
 
-#### Left for when we have a working x64 build using GLFW
-- [ ] Add all functionality from the GOTY version of the game
-  - [x] Achievements **(Partial)**
-  - [ ] Zombatar
+1. 打开仓库根目录，即包含 `CMakeLists.txt` 的目录。
+2. 在 **Settings → Build, Execution, Deployment → Toolchains** 中选择 CLion 自带的 MinGW，并确认 C / C++ 编译器能够被识别。
+3. 在 CMake 配置中选择 **Debug**、**Ninja**，构建目录使用 `cmake-build-debug`。
+4. 等待 CMake 配置完成，选择 `LawnProject` 目标并构建。
 
-#### Possible future features
-- [ ] Create an easy to use modding API for the game
-  - [ ] Parse zombies from files
-  - [ ] Parse plants from files
-  - [ ] Parse maps from files
-  - [ ] Add scripting for custom sequences
+使用上述配置时，生成文件位于：
 
-## Installation
+```text
+cmake-build-debug/SexyAppFramework.exe
+```
 
-### Visual Studio Community
+`PlantsVsZombies` 是顶层 CMake 项目名，`LawnProject` 是构建目标，`SexyAppFramework.exe` 是最终可执行文件名。
 
-Open the folder containing the `CMakeSettings.json`, wait until cache finishes generating and build the project
+### 使用命令行构建
 
-### Other (Sublime, Visual Studio Code, etc..)
+先确认 Git、CMake、Ninja 和 MinGW 的 `gcc`、`g++`、`windres` 已加入当前终端的 `PATH`，再在仓库根目录执行：
 
-Run the following commands (assuming you have CMake installed with Ninja) where the `CMakeSettings.json` file is located
+```powershell
+cmake -S . -B cmake-build-debug -G Ninja -DCMAKE_BUILD_TYPE=Debug
+cmake --build cmake-build-debug --target LawnProject -j 12
+```
 
-`cmake -G Ninja -B cmake-build`
+如果当前构建目录已由 CLion 配置，可直接执行第二条命令。不要在同一构建目录混用不同编译器或生成器；切换工具链时使用新的构建目录。
 
-`cmake --build cmake-build`
+### 构建依赖
 
-If running these commands does not create a successful build please [create an issue](https://github.com/Patoke/re-plants-vs-zombies/issue) and detail your problem
+以下库通过 `ExternalProject_Add` 在首次构建时从 GitHub 下载并编译，无需手动把源码放入仓库：
 
-After you build, the output executable should be in the `Debug` or `Release` (depending on your build target) folder inside `SexyAppFramework`
+| 依赖 | 固定版本 | 用途 |
+| --- | --- | --- |
+| zlib | `v1.3` | 压缩数据处理 |
+| libjpeg-turbo | `3.0.1` | JPEG 图片读取 |
+| libpng | `v1.6.40` | PNG 图片读取 |
 
-Then you want to copy that executable inside of the original game's root folder (or copy the contents of the original game folder inside the previously mentioned folder)
+相关配置位于 [`SexyAppFramework/imagelib/CMakeLists.txt`](SexyAppFramework/imagelib/CMakeLists.txt)。下载源码、库文件和生成的头文件均存放在构建目录内，因此首次构建需要能访问 GitHub。
 
-After that you should be able to just open the built executable and enjoy re-pvz!
+默认保留编译警告，但不将警告视为错误。需要严格检查时可启用：
 
-## Contributing
+```powershell
+cmake -S . -B cmake-build-debug -DPVZ_WARNINGS_AS_ERRORS=ON
+```
 
-When contributing please follow the following guides:
+当前顶层 `CMakeLists.txt` 仍直接设置 `CMAKE_BUILD_TYPE` 为 `Debug`，本文仅说明已验证的 Debug 构建。单配置生成器下，单独传入 `-DCMAKE_BUILD_TYPE=Release` 不会覆盖该设置。
 
-<details><summary>SexyAppFramework coding philosophy</summary>
+## 运行与调试
 
-#### From the SexyAppFramework docs:
+编译生成的是程序本体，需要配合原版资源使用。可以把生成的 `SexyAppFramework.exe` 复制到单独准备的原版游戏目录副本中，然后从该目录运行；也可以在 CLion 的 Run/Debug 配置中，将 **Working directory** 指向准备好的游戏资源目录。
 
-<br>
-The framework differs from many other APIs in that some class properties are not wrapped in accessor methods, but rather are made to be accessed directly through public member data.   The window caption of your application, for example, is set by assigning a value to the std::string mTitle in the application object before the application’s window is created.  We felt that in many cases this reduced the code required to implement a class.  Also of note is the prefix notation used on variables: “m” denotes a class member, “the” denotes a parameter passed to a method or function, and “a” denotes a local variable.
-</br>
-</details>
+源码会读取 `main.pak`、`properties/resources.xml`、`Properties/LawnStrings.txt` 等资源路径，并根据资源清单继续加载图片、字体、音效和动画。部分文件可以由 PAK 资源系统提供，不一定全部以独立文件夹存在。
 
-<details><summary>Contributor markings</summary>
+音频实现还会动态加载 `bass.dll` 等库。使用的动态库需要与生成程序的架构及源码要求的接口版本匹配，例如 64 位程序无法直接加载 32 位 DLL。构建成功只验证了编译和链接，不代表原版资源版本、动态库和所有游戏功能已经兼容。
 
-<br>
-Whenever you need to leave a comment for other developers to find you should do so with the following grammar:
+## 项目结构
 
-* Always include the name of the contributor as in:
-  * `@Contributor`
-* For todos include the todo marking as in:
-  * `@Contributor todo`
-* Always add a colon to specify that the start of the comment starts there
-  * `@Contributor todo: Thing went wrong!`
-* If a new function has been reversed and you have found the address in the latest version of the game (or have reversed a certain class member offset) please note it as follows:
-  * `@Contributor GOTY: 0xADDRESS`
-</br>
-</details>
+```text
+re-plants-vs-zombies/
+├── main.cpp                      # WinMain 入口，创建并启动 LawnApp
+├── LawnApp.cpp / LawnApp.h        # 应用生命周期、资源加载、界面切换、游戏总控
+├── ConstEnums.h                  # 植物、僵尸、关卡、动画等类型和状态枚举
+├── GameConstants.h               # 场地尺寸、关卡数量、时间间隔等常量
+├── Resources.cpp / Resources.h   # 图片、字体、声音等资源对象及提取绑定
+├── Lawn/                         # 游戏玩法层
+│   ├── Board.cpp / Board.h       # 战场管理、刷怪、更新、绘制和交互
+│   ├── Plant.cpp / Plant.h       # 植物行为、攻击和生产逻辑
+│   ├── Zombie.cpp / Zombie.h     # 僵尸行为、状态和受伤逻辑
+│   ├── Projectile.*              # 子弹运动、碰撞和命中效果
+│   ├── SeedPacket.*              # 种子卡片、费用和冷却逻辑
+│   ├── Challenge.*               # 挑战模式与特殊规则
+│   ├── Coin.* / LawnMower.*      # 掉落物、收集物和小推车
+│   ├── ZenGarden.*               # 禅境花园玩法
+│   ├── System/                   # 存档、玩家资料、音乐、游戏动画定义等
+│   └── Widget/                   # 主菜单、选卡、商店、图鉴、设置等游戏界面
+├── Sexy.TodLib/                  # 动画、粒子、特效和游戏辅助设施
+│   ├── Reanimator.*              # Reanimation 动画播放
+│   ├── ReanimAtlas.*             # 动画图集
+│   ├── TodParticle.* / Trail.*   # 粒子和拖尾效果
+│   ├── Attachment.*              # 特效与对象之间的挂接
+│   ├── EffectSystem.*            # 特效对象的统一管理
+│   ├── Definition.*              # 动画、特效等定义数据处理
+│   ├── DataArray.h / TodList.*   # 对象容器和分配辅助
+│   └── TodCommon.* / TodDebug.*  # 公共工具与调试支持
+├── SexyAppFramework/             # 底层引擎和主可执行目标的构建定义
+│   ├── SexyAppBase.* / SexyApp.* # 窗口、消息循环、资源和应用基础能力
+│   ├── graphics/                 # 绘图、图像、字体和旧版 DirectX 渲染
+│   ├── sound/                    # 音效、音乐及 BASS / FMOD 加载接口
+│   ├── widget/                   # 通用控件、事件和控件管理器
+│   ├── imagelib/                 # 图像解码封装与外部图片库构建
+│   ├── paklib/                   # PAK 资源包访问
+│   ├── ogg/                      # 内置 Ogg / Vorbis 解码代码
+│   ├── misc/                     # XML、资源管理、数学、线程及错误处理工具
+│   └── unused/                   # 历史保留代码，未列入当前构建
+├── CMake/                        # 构建属性和公共 CMake 函数
+├── CMakeLists.txt                # 顶层构建入口、编译参数和警告选项
+├── CMakeSettings.json            # 保留的 Visual Studio CMake 配置
+├── toolchain.cmake               # 面向 Windows 的交叉编译工具链配置
+├── configure.sh / install.sh     # 原项目的交叉构建及本地部署脚本
+├── tools/                        # PAK 和动画定义研究辅助工具
+├── README_en.md                  # 保留的上游英文说明
+└── LICENSE                       # 仓库附带的许可证文本
+```
 
+`Lawn/Widget` 是具体游戏界面，`SexyAppFramework/widget` 是支撑这些界面的通用控件系统。`Lawn/System` 包含与游戏内容绑定的系统，`Sexy.TodLib` 提供可被玩法调用的动画和特效设施。
 
-## Thanks to
+### 程序如何连接起来
 
-- [@rspforhp](https://www.github.com/octokatherine) for their amazing work decompiling the 0.9.9 version of PvZ
-- [@ruslan831](https://github.com/ruslan831) for archiving the [0.9.9 decompilation of PvZ](https://github.com/ruslan831/PlantsVsZombies-decompilation)
-- The GLFW team for their amazing work
-- PopCap for creating the amazing PvZ franchise (and making their game engine public)
-- All the contributors which have worked or are actively working in this amazing project
+```mermaid
+flowchart TD
+    Entry[main.cpp / WinMain] --> App[LawnApp：初始化与游戏总控]
+    App --> Screens[Lawn/Widget：菜单与游戏界面]
+    App --> Board[Lawn/Board：战场]
+    Board --> Entities[Plant / Zombie / Projectile 等游戏对象]
+    App --> Systems[Lawn/System：存档、资料、音乐等]
+    Entities --> Tod[Sexy.TodLib：动画与特效]
+    App --> Engine[SexyAppFramework：窗口、循环、绘图、音频、资源]
+    Screens --> Engine
+    Board --> Engine
+    Tod --> Engine
+```
+
+入口依次创建 `LawnApp`，调用 `Init()`、`Start()` 和 `Shutdown()`。应用初始化时加载资源和玩家信息、创建标题界面，随后由框架消息循环驱动界面与游戏对象更新。进入对局后，`Board` 统一组织战场对象的更新与绘制。
+
+## 二次开发从哪里开始
+
+| 想修改的内容 | 优先阅读 |
+| --- | --- |
+| 游戏启动、全局状态、菜单切换 | `main.cpp`、`LawnApp.cpp` |
+| 阳光生成、刷怪节奏、战场规则 | `Lawn/Board.cpp`、`GameConstants.h`、`Lawn/Challenge.cpp` |
+| 植物攻击、生产与种子卡属性 | `Lawn/Plant.cpp`、`Lawn/SeedPacket.cpp`、`ConstEnums.h` |
+| 僵尸移动、攻击、受伤与特殊技能 | `Lawn/Zombie.cpp`、`ConstEnums.h` |
+| 子弹轨迹、碰撞与伤害 | `Lawn/Projectile.cpp` |
+| 菜单、选卡、商店和图鉴 | `Lawn/Widget/` |
+| 存档和玩家进度 | `Lawn/System/SaveGame.cpp`、`PlayerInfo.cpp`、`ProfileMgr.cpp` |
+| 动画与粒子效果 | `Sexy.TodLib/`、`Lawn/System/ReanimationLawn.cpp` |
+| 图片、字体、音频资源的加载与绑定 | `Resources.cpp`、`SexyAppFramework/misc/ResourceManager.cpp` |
+| 渲染或窗口系统 | `SexyAppFramework/graphics/`、`SexyAppFramework/SexyAppBase.cpp` |
+
+建议按 `main.cpp → LawnApp.cpp → Lawn/Board.cpp → Plant.cpp / Zombie.cpp / Projectile.cpp` 的顺序熟悉主线，再根据需求进入界面、资源或引擎层。新增一种植物或僵尸通常需要同时处理枚举、属性、行为、动画与资源绑定；当前没有已经完成的通用 Mod API。
+
+`tools/` 中保留了处理 PAK 数据和研究动画定义的独立小工具，未接入主程序的 CMake 构建。`configure.sh` 使用交叉编译工具链；`install.sh` 还包含原作者机器上的 Steam 路径，使用前需要按本机环境调整。
+
+## 提交约定
+
+提交信息遵循[约定式提交说明](https://www.eieddie.site/docs/conventional-commits/)，使用 `<类型>: <简短描述>` 格式，按用途拆分修改。例如：
+
+```text
+feat: 新增植物攻击行为
+fix: 修复子弹碰撞判断
+build: 调整 CMake 构建配置
+docs: 补充本地调试说明
+chore: 更新忽略规则
+```
+
+延续已有代码中的命名方式：`m` 前缀表示成员变量，`the` 前缀常用于参数，`a` 前缀常用于局部变量。涉及存档结构或资源格式的修改，应在提交说明中写明兼容性影响。
+
+## 来源与许可
+
+本仓库的原项目说明保留在 [`README_en.md`](README_en.md)，记录了逆向工程背景、上游目标和致谢。
+
+- 上游项目：[Patoke/re-plants-vs-zombies](https://github.com/Patoke/re-plants-vs-zombies)。
+- 历史反编译代码归档：[ruslan831/PlantsVsZombies-decompilation](https://github.com/ruslan831/PlantsVsZombies-decompilation)。
+- 感谢原逆向工程作者、项目贡献者及 PopCap 的 SexyAppFramework。
+
+仓库附带的 [`LICENSE`](LICENSE) 为 CC0 1.0 Universal。第三方库和原版游戏资源应分别查看其对应许可或使用条款；仓库许可证不表示随附原版游戏资源的授权。
