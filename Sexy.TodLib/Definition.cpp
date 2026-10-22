@@ -767,7 +767,7 @@ bool DefinitionReadStringField(XMLParser* theXmlParser, char** theValue)
     }
     else
     {
-        *theValue = (char*)DefinitionAlloc(aStringValue.size());
+        *theValue = (char*)DefinitionAlloc(aStringValue.size() + 1);
         strcpy(*theValue, aStringValue.c_str());
     }
     return true;
@@ -1414,7 +1414,7 @@ void DefinitionFreeMap(DefMap* theDefMap, char* theDefinition)
         switch (aField->mFieldType)
         {
         case DefFieldType::DT_STRING:
-            if (*(char*)theArray->mArrayData == '\0')
+            if (theArray->mArrayData != nullptr && *(char*)theArray->mArrayData != '\0')
                 delete[] (char*)theArray->mArrayData;  // 释放字符数组
             theArray->mArrayData = nullptr;
             break;
