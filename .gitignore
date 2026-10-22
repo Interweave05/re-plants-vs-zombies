@@ -15,6 +15,7 @@ cmake-build*/
 CMakeUserPresets.json
 CTestCustom.cmake
 Testing/
+debug-backups/
 
 # Ninja generated files (including in-source builds)
 build.ninja

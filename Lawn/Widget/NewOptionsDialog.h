@@ -31,6 +31,7 @@ protected:
         NewOptionsDialog_DisplayMode,
         NewOptionsDialog_HardwareAcceleration,
         NewOptionsDialog_PauseOnLostFocus,
+        NewOptionsDialog_DebugTrainer,
         NewOptionsDialog_PageFirst = 100
     };
 
@@ -52,6 +53,7 @@ public:
     LawnStoneButton* mAlmanacButton;
     LawnStoneButton* mBackToMainButton;
     LawnStoneButton* mRestartButton;
+    LawnStoneButton* mDebugTrainerButton;
     NewLawnButton* mBackToGameButton;
     bool mFromGameSelector;
 

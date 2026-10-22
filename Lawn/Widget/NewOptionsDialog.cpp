@@ -1,4 +1,5 @@
 #include "../Board.h"
+#include "../DebugTrainer.h"
 #include "GameButton.h"
 #include "../Cutscene.h"
 #include "Almanac.h"
@@ -144,6 +145,7 @@ NewOptionsDialog::NewOptionsDialog(LawnApp* theApp, bool theFromGameSelector) :
     mAlmanacButton = MakeButton(NewOptionsDialog::NewOptionsDialog_Almanac, this, _S("[VIEW_ALMANAC_BUTTON]"));
     mRestartButton = MakeButton(NewOptionsDialog::NewOptionsDialog_Restart, this, _S("[RESTART_LEVEL_BUTTON]")); // @Patoke: wrong local name
     mBackToMainButton = MakeButton(NewOptionsDialog::NewOptionsDialog_MainMenu, this, _S("[MAIN_MENU_BUTTON]"));
+    mDebugTrainerButton = MakeButton(NewOptionsDialog_DebugTrainer, this, _S("Debug Trainer"));
 
     mBackToGameButton = MakeNewButton(
         Dialog::ID_OK, 
@@ -229,6 +231,7 @@ NewOptionsDialog::~NewOptionsDialog()
     delete mRestartButton;
     delete mBackToMainButton;
     delete mBackToGameButton;
+    delete mDebugTrainerButton;
 }
 
 //0x45C880
@@ -243,6 +246,7 @@ void NewOptionsDialog::AddedToManager(Sexy::WidgetManager* theWidgetManager)
 {
     Dialog::AddedToManager(theWidgetManager);
     AddWidget(mAlmanacButton);
+    AddWidget(mDebugTrainerButton);
     AddWidget(mRestartButton);
     AddWidget(mBackToMainButton);
     AddWidget(mMusicVolumeSlider);
@@ -260,6 +264,7 @@ void NewOptionsDialog::RemovedFromManager(Sexy::WidgetManager* theWidgetManager)
     CloseDisplayModeList();
     Dialog::RemovedFromManager(theWidgetManager);
     RemoveWidget(mAlmanacButton);
+    RemoveWidget(mDebugTrainerButton);
     RemoveWidget(mMusicVolumeSlider);
     RemoveWidget(mSfxVolumeSlider);
     RemoveWidget(mDisplayModeButton);
@@ -287,6 +292,7 @@ void NewOptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
     mRestartButton->Resize(mAlmanacButton->mX, mAlmanacButton->mY + 43, 209, 46);
     mBackToMainButton->Resize(mRestartButton->mX, mRestartButton->mY + 43, 209, 46);
     mBackToGameButton->Resize(30, 381, mBackToGameButton->mWidth, mBackToGameButton->mHeight);
+    SelectPage(mSettingsPage);
 
 }
 
@@ -316,8 +322,8 @@ void NewOptionsDialog::Draw(Sexy::Graphics* g)
         TodDrawString(g, _S("Pause When Unfocused"), 274, 180, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
         if (!mGameActionsAvailable[0] && !mGameActionsAvailable[1] && !mGameActionsAvailable[2])
         {
-            TodDrawString(g, _S("Turn off to keep playing"), 212, 244, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
-            TodDrawString(g, _S("when switching to other windows."), 212, 267, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
+            TodDrawString(g, _S("Turn off to keep playing"), 212, 284, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
+            TodDrawString(g, _S("when switching to other windows."), 212, 307, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
         }
     }
 }
@@ -336,18 +342,19 @@ void NewOptionsDialog::SelectPage(SettingsPage thePage)
     mDisplayModeButton->SetVisible(thePage == PAGE_DISPLAY);
     mHardwareAccelerationCheckbox->SetVisible(thePage == PAGE_DISPLAY);
     mPauseOnLostFocusCheckbox->SetVisible(thePage == PAGE_GAME);
+    mDebugTrainerButton->SetVisible(thePage == PAGE_GAME);
     mAlmanacButton->SetVisible(thePage == PAGE_GAME && mGameActionsAvailable[0]);
     mRestartButton->SetVisible(thePage == PAGE_GAME && mGameActionsAvailable[1]);
     mBackToMainButton->SetVisible(thePage == PAGE_GAME && mGameActionsAvailable[2]);
     if (thePage == PAGE_GAME)
     {
-        int aY = 220;
-        LawnStoneButton* aButtons[] = {mAlmanacButton, mRestartButton, mBackToMainButton};
+        int aY = 211;
+        LawnStoneButton* aButtons[] = {mDebugTrainerButton, mAlmanacButton, mRestartButton, mBackToMainButton};
         for (auto aButton : aButtons)
         {
             if (!aButton->mVisible) continue;
-            aButton->Resize(107, aY, 209, 46);
-            aY += 43;
+            aButton->Resize(107, aY, 209, 40);
+            aY += 40;
         }
     }
     if (mWidgetManager) mWidgetManager->SetFocus(this);
@@ -542,6 +549,12 @@ void NewOptionsDialog::ButtonPress(int theId)
 //0x45D310
 void NewOptionsDialog::ButtonDepress(int theId)
 {
+    if (theId == NewOptionsDialog_DebugTrainer)
+    {
+        mApp->KillNewOptionsDialog();
+        OpenDebugTrainer();
+        return;
+    }
     if (theId >= NewOptionsDialog_PageFirst && theId < NewOptionsDialog_PageFirst + static_cast<int>(NUM_PAGES))
     {
         SelectPage(static_cast<SettingsPage>(theId - NewOptionsDialog_PageFirst));

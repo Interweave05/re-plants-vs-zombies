@@ -144,6 +144,7 @@ public:
 	virtual void					URLOpenSucceeded(const std::string& theURL);
 	virtual bool					OpenURL(const std::string& theURL, bool shutdownOnOpen);
 	virtual bool					DebugKeyDown(int theKey);
+	void                            PrepareForDebugTransition();
 	virtual void					HandleCmdLineParam(const std::string& theParamName, const std::string& theParamValue);
 	void							ConfirmQuit();
 	void							ConfirmCheckForUpdates() { ; }

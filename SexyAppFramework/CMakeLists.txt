@@ -25,6 +25,8 @@ source_group("Lawn\\Board\\Board Include" FILES ${Lawn__Board__Board_Include})
 
 set(Lawn__Board__Board_Source
     "../Lawn/Board.cpp"
+    "../Lawn/DebugTrainer.cpp"
+    "../Lawn/DebugTrainer.h"
     "../Lawn/Challenge.cpp"
     "../Lawn/Coin.cpp"
     "../Lawn/CursorObject.cpp"

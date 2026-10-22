@@ -1,6 +1,7 @@
 #include <corecrt.h>
 #include <time.h>
 #include "LawnApp.h"
+#include "Lawn/DebugTrainer.h"
 #include "Lawn/Board.h"
 #include "Lawn/Plant.h"
 #include "Lawn/Zombie.h"
@@ -153,6 +154,7 @@ LawnApp::LawnApp()
 //0x44EDD0、0x44EDF0
 LawnApp::~LawnApp()
 {
+	DestroyDebugTrainer();
 	if (mBoard)
 	{
 		WriteCurrentUserConfig();
@@ -1633,8 +1635,20 @@ void LawnApp::UpdatePlayTimeStats()
 }
 
 //0x452650
+void LawnApp::PrepareForDebugTransition()
+{
+	KillSeedChooserScreen();
+	KillBoard();
+	KillGameSelector();
+	KillAwardScreen();
+	KillChallengeScreen();
+	KillCreditScreen();
+	ProcessSafeDeleteList();
+}
+
 void LawnApp::UpdateFrames()
 {
+	UpdateDebugTrainer(this);
 	if ((!mActive || mMinimized) && mBoard)
 	{
 		mBoard->ResetFPSStats();
@@ -1644,7 +1658,7 @@ void LawnApp::UpdateFrames()
 	UpdatePlayTimeStats();
 #endif
 
-	int aUpdateCount = 1;
+	int aUpdateCount = DebugTrainerSpeed();
 	if (gSlowMo)
 	{
 		++gSlowMoCounter;
