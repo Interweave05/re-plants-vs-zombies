@@ -337,7 +337,6 @@ GameSelector::GameSelector(LawnApp* theApp)
 	//mZombatarWidget = new ZombatarWidget(this);
 	//mZombatarWidget->Resize(800, 0, mApp->mWidth, mApp->mHeight);
 	mAchievementsWidget = new AchievementsWidget(this->mApp);
-	mAchievementsWidget->Move(0, mApp->mHeight);
 
 	this->AddWidget(mAdventureButton);
 	this->AddWidget(mMinigameButton);
@@ -1476,6 +1475,7 @@ void GameSelector::SlideTo(int theX, int theY) {
 
 // GOTY @Patoke: 0x450200
 void GameSelector::ShowAchievementsWidget() {
+	mAchievementsWidget->ResetScroll();
 	SlideTo(0, -mApp->mHeight);
 	mWidgetManager->SetFocus(mAchievementsWidget);
 }

@@ -18,7 +18,7 @@
 #include "widget/Dialog.h"
 #include "widget/WidgetManager.h"
 
-Rect aBackButtonRect = { 120, 35, 130, 80 };
+static const Rect aBackButtonRect = { 120, 35, 130, 80 };
 
 AchievementItem gAchievementList[MAX_ACHIEVEMENTS] = {
 	{ "Home Lawn Security", "Complete Adventure Mode." },
@@ -48,12 +48,10 @@ AchievementsWidget::AchievementsWidget(LawnApp* theApp) {
 	mApp = theApp;
 	mWidth = 800;
 	mHeight = IMAGE_ACHEESEMENTS_CHINA->mHeight + IMAGE_SELECTORSCREEN_ACHIEVEMENTS_BG->mHeight + 15700;
-	mScrollDirection = -1;
-	mScrollValue = 0;
 	mDefaultScrollValue = 30;
 	mScrollDecay = 1;
-	mDidPressMoreButton = false;
 	mMoreRockRect = Rect(710, 470, IMAGE_ACHEESEMENTS_MORE_ROCK->mWidth - 25, IMAGE_ACHEESEMENTS_MORE_ROCK->mHeight - 50);
+	ResetScroll();
 }
 
 // GOTY @Patoke: 0x4010E0
@@ -61,33 +59,27 @@ AchievementsWidget::~AchievementsWidget() {
 
 }
 
+void AchievementsWidget::ResetScroll() {
+	mScrollDirection = -1;
+	mScrollValue = 0;
+	mDidPressMoreButton = false;
+	Move(0, mApp->mHeight);
+}
+
 // GOTY @Patoke: 0x401A10
 void AchievementsWidget::Update() {
+	Widget::Update();
 	if (mScrollValue <= 0)
 		return;
 
-	if (mScrollValue > mDefaultScrollValue)
-		mScrollValue = mDefaultScrollValue;
-
-	mScrollValue -= mScrollDecay;
-
-	int aNewY = mY + mScrollValue * mScrollDirection;
-	if (aNewY >= -1)
-		aNewY = -1;
-	//if (aNewY >= mApp->mHeight)
-	//	aNewY = mApp->mHeight;
-
-	int aMaxScroll = 2 * mApp->mHeight + 50 - mHeight;
-	if (aNewY <= aMaxScroll)
-		aNewY = aMaxScroll;
-
-	mY = aNewY;
-
-	int aDelta = aNewY - mY;
-	mMoreRockRect.mY += aDelta;
-	aBackButtonRect.mY += aDelta;
-
-	if (mScrollValue <= 0)
+	mScrollValue = std::max(0, std::min(mScrollValue, mDefaultScrollValue) - mScrollDecay);
+	// @Codex: This panel starts one viewport below its parent menu's origin.
+	int aTopY = mApp->mHeight;
+	int aBottomY = aTopY - std::max(0, mHeight - mApp->mHeight);
+	int aNewY = ClampInt(mY + mScrollValue * mScrollDirection, aBottomY, aTopY);
+	Move(mX, aNewY);
+	mDidPressMoreButton = aNewY < aTopY;
+	if (aNewY == aTopY || aNewY == aBottomY)
 		mScrollValue = 0;
 }
 
@@ -108,7 +100,10 @@ void AchievementsWidget::Draw(Graphics* g) {
 
 	g->DrawImage(IMAGE_ACHEESEMENTS_CHINA, 0, mHeight - IMAGE_ACHEESEMENTS_CHINA->mHeight - /*50*/ 650);
 	
-	if (aBackButtonRect.Contains(mWidgetManager->mLastMouseX - mX, mWidgetManager->mLastMouseY - mY))
+	Point aWidgetPos = GetAbsPos();
+	int aMouseX = mWidgetManager->mLastMouseX - aWidgetPos.mX;
+	int aMouseY = mWidgetManager->mLastMouseY - aWidgetPos.mY;
+	if (aBackButtonRect.Contains(aMouseX, aMouseY))
 		g->DrawImage(IMAGE_ACHEESEMENTS_BACK_HIGHLIGHT, 128, 55);
 
 	for (int i = 0; i < MAX_ACHIEVEMENTS; i++) {
@@ -149,7 +144,7 @@ void AchievementsWidget::Draw(Graphics* g) {
 
 	g->DrawImage(IMAGE_ACHEESEMENTS_MORE_ROCK, 700, 450);
 
-	bool aIsHighlight = mMoreRockRect.Contains(mWidgetManager->mLastMouseX - mX, mWidgetManager->mLastMouseY - mY);
+	bool aIsHighlight = mMoreRockRect.Contains(aMouseX, aMouseY);
 	if (mDidPressMoreButton) {
 		g->DrawImage(aIsHighlight ? IMAGE_ACHEESEMENTS_TOP_BUTTON_HIGHLIGHT : IMAGE_ACHEESEMENTS_TOP_BUTTON, 700, 450);
 	}
@@ -160,7 +155,14 @@ void AchievementsWidget::Draw(Graphics* g) {
 
 // GOTY @Patoke: 0x4019D0
 void AchievementsWidget::KeyDown(KeyCode theKey) {
-	if (theKey == KEYCODE_UP) {
+	if (theKey == KEYCODE_ESCAPE) {
+		mApp->mGameSelector->SlideTo(0, 0);
+		mWidgetManager->SetFocus(mApp->mGameSelector);
+	}
+	else if (theKey == KEYCODE_HOME) {
+		ResetScroll();
+	}
+	else if (theKey == KEYCODE_UP) {
 		mScrollValue = mDefaultScrollValue;
 		mScrollDirection = 1;
 	}

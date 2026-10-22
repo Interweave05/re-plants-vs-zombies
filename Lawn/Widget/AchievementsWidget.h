@@ -56,6 +56,7 @@ public:
 	AchievementsWidget(LawnApp* theApp);
 	virtual ~AchievementsWidget();
 
+	void                        ResetScroll();
 	virtual void                Update();
 	virtual void                Draw(Graphics* g);
 	virtual void                KeyDown(KeyCode theKey);
