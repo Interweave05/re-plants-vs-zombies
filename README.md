@@ -4,7 +4,7 @@
 
 《植物大战僵尸》初代的非官方 C++ 重实现与扩展项目。本仓库基于已有的逆向工程项目继续开发，包含游戏逻辑、SexyAppFramework 引擎和 TodLib 动画特效代码，可用于阅读实现、修改玩法和开展二次开发。
 
-当前已在 Windows 上使用 CLion 2025.3.1、MinGW GCC 13.1.0、CMake 4.2 和 Ninja 完成 Debug 编译及链接。游戏运行与完整流程尚未验证，仓库仍包含未完成的实现。
+当前已在 Windows 上使用 CLion 2025.3.1、MinGW GCC 13.1.0、CMake 4.2 和 Ninja 完成 Debug 编译及链接，并使用本机 Steam 版资源验证了点击开始、主菜单显示、选项窗口、成就页往返和正常退出。完整关卡流程尚未验证，仓库仍包含未完成的实现。
 
 ## 当前状态
 
@@ -71,11 +71,25 @@ cmake -S . -B cmake-build-debug -DPVZ_WARNINGS_AS_ERRORS=ON
 
 ## 运行与调试
 
-编译生成的是程序本体，需要配合原版资源使用。可以把生成的 `SexyAppFramework.exe` 复制到单独准备的原版游戏目录副本中，然后从该目录运行；也可以在 CLion 的 Run/Debug 配置中，将 **Working directory** 指向准备好的游戏资源目录。
+编译生成的是程序本体，需要配合原版资源和音频动态库使用。推荐在构建目录准备运行文件，示例布局如下：
+
+```text
+cmake-build-debug/
+├── SexyAppFramework.exe
+├── bass.dll                 # 与程序位数匹配的 BASS 2.4 动态库
+├── main.pak                 # 从本机原版游戏目录复制
+└── properties/              # 从本机原版游戏目录复制
+```
+
+从 [BASS 官方网站](https://www.un4seen.com/bass.html)下载 Windows 开发包。当前已验证的程序是 64 位，需要将压缩包中 **`x64/bass.dll`** 复制到可执行文件旁边；压缩包根目录的 `bass.dll` 为 32 位版本，原版游戏自带的 DLL 也可能与当前程序位数不匹配。保留下载包中的 `bass.txt`，供查看版本和许可信息。
+
+在 CLion 的 Run/Debug 配置中，将 **Working directory** 设置为准备好这些文件的构建目录，再运行 `LawnProject`。也可以把新程序和匹配的音频 DLL 放入单独准备的游戏资源目录副本，从该副本运行。
 
 源码会读取 `main.pak`、`properties/resources.xml`、`Properties/LawnStrings.txt` 等资源路径，并根据资源清单继续加载图片、字体、音效和动画。部分文件可以由 PAK 资源系统提供，不一定全部以独立文件夹存在。
 
-音频实现还会动态加载 `bass.dll` 等库。使用的动态库需要与生成程序的架构及源码要求的接口版本匹配，例如 64 位程序无法直接加载 32 位 DLL。构建成功只验证了编译和链接，不代表原版资源版本、动态库和所有游戏功能已经兼容。
+遇到 `Can't find bass.dll.` 时，先检查 DLL 是否放在正在运行的可执行文件旁，以及其位数是否匹配。当前代码将加载失败统一显示为这个提示，因此 DLL 文件存在时也可能是架构或依赖不兼容。仅修改工作目录不能代替准备匹配的 DLL。
+
+原版资源、音频 DLL 和本地运行文件不应提交到源码仓库；放在 `cmake-build-debug/` 中会由 `.gitignore` 忽略。主菜单启动验证未覆盖所有游戏功能和资源版本的兼容性。
 
 ## 项目结构
 
