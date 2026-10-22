@@ -20,6 +20,11 @@
 #define NAME0 0555
 #endif
 
+#ifdef NAME_ADDITIVE
+#undef PIXEL_INCLUDE
+#define PIXEL_INCLUDE "../Sexy.TodLib/TodDrawTrianglePixelAdditive.inc"
+#endif
+
 #define TEXTURED
 #define NAME1 TEX1
 
