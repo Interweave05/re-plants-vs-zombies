@@ -212,6 +212,7 @@ public:
 	int						mAutoMuteCount;
 	bool					mDemoMute;
 	bool					mMuteOnLostFocus;
+	bool                    mUpdateWhileMinimized;
 	MemoryImageSet			mMemoryImageSet;
 	SharedImageMap			mSharedImageMap;
 	bool					mCleanupSharedImages;

@@ -140,6 +140,7 @@ LawnApp::LawnApp()
 	mProfileMgr = new ProfileMgr();
 	mRegisterResourcesLoaded = false;
 	mTodCheatKeys = false;
+	SetPauseOnLostFocus(false);
 	mCrazyDaveReanimID = ReanimationID::REANIMATIONID_NULL;
 	mCrazyDaveState = CrazyDaveState::CRAZY_DAVE_OFF;
 	mCrazyDaveBlinkCounter = 0;
@@ -372,10 +373,16 @@ void LawnApp::GotFocus()
 //0x44F460
 void LawnApp::LostFocus()
 {
-	if (!mTodCheatKeys && CanPauseNow())
+	if (mPauseOnLostFocus && !mTodCheatKeys && CanPauseNow())
 	{
 		DoPauseDialog();
 	}
+}
+
+void LawnApp::SetPauseOnLostFocus(bool thePause)
+{
+	mPauseOnLostFocus = thePause;
+	mUpdateWhileMinimized = !thePause;
 }
 
 //0x44F480
@@ -388,12 +395,15 @@ void LawnApp::WriteToRegistry()
 	}
 
 	SexyAppBase::WriteToRegistry();
+	RegistryWriteBoolean("PauseOnLostFocus", mPauseOnLostFocus);
 }
 
 //0x44F530
 void LawnApp::ReadFromRegistry()
 {
 	SexyApp::ReadFromRegistry();
+	RegistryReadBoolean("PauseOnLostFocus", &mPauseOnLostFocus);
+	SetPauseOnLostFocus(mPauseOnLostFocus);
 }
 
 //0x44F540

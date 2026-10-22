@@ -30,6 +30,7 @@ protected:
         NewOptionsDialog_SoundVolume,
         NewOptionsDialog_DisplayMode,
         NewOptionsDialog_HardwareAcceleration,
+        NewOptionsDialog_PauseOnLostFocus,
         NewOptionsDialog_PageFirst = 100
     };
 
@@ -40,6 +41,7 @@ public:
     Sexy::Slider* mMusicVolumeSlider;
     Sexy::Slider* mSfxVolumeSlider;
     Sexy::Checkbox* mHardwareAccelerationCheckbox;
+    Sexy::Checkbox* mPauseOnLostFocusCheckbox;
     LawnStoneButton* mDisplayModeButton;
     Sexy::ListWidget* mDisplayModeList;
     LawnStoneButton* mPageButtons[NUM_PAGES];

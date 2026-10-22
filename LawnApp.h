@@ -71,6 +71,7 @@ public:
 	std::string						mMod;											//+0x7D8
 	bool							mRegisterResourcesLoaded;						//+0x7F4
 	bool							mTodCheatKeys;									//+0x7F5
+	bool                            mPauseOnLostFocus;
 	GameMode						mGameMode;										//+0x7F8
 	GameScenes						mGameScene;										//+0x7FC
 	bool							mLoadingZombiesThreadCompleted;					//+0x800
@@ -132,6 +133,7 @@ public:
 	bool							KillNewOptionsDialog();
 	virtual void					GotFocus();
 	virtual void					LostFocus();
+	void SetPauseOnLostFocus(bool thePause);
 	virtual void					InitHook();
 	virtual void					WriteToRegistry();
 	virtual void					ReadFromRegistry();

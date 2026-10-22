@@ -258,6 +258,7 @@ SexyAppBase::SexyAppBase()
 	mAutoMuteCount = 0;
 	mDemoMute = false;
 	mMuteOnLostFocus = true;
+	mUpdateWhileMinimized = false;
 	mCurHandleNum = 0;
 	mFPSTime = 0;
 	mFPSStartTick = GetTickCount();
@@ -2231,7 +2232,7 @@ void SexyAppBase::UpdateFrames()
 {
 	mUpdateCount++;	
 
-	if (!mMinimized)
+	if (!mMinimized || mUpdateWhileMinimized)
 	{		
 		if (mWidgetManager->UpdateFrame())
 			++mFPSDirtyCount;
@@ -2243,7 +2244,7 @@ void SexyAppBase::UpdateFrames()
 
 void SexyAppBase::DoUpdateFramesF(float theFrac)
 {
-	if ((mVSyncUpdates) && (!mMinimized))
+	if (mVSyncUpdates && (!mMinimized || mUpdateWhileMinimized))
 		mWidgetManager->UpdateFrameF(theFrac);	
 }
 

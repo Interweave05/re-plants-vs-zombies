@@ -174,6 +174,7 @@ NewOptionsDialog::NewOptionsDialog(LawnApp* theApp, bool theFromGameSelector) :
     mSfxVolumeSlider->SetValue(theApp->GetSfxVolume() / 0.65);
 
     mHardwareAccelerationCheckbox = MakeNewCheckbox(NewOptionsDialog::NewOptionsDialog_HardwareAcceleration, this, theApp->Is3DAccelerated());
+    mPauseOnLostFocusCheckbox = MakeNewCheckbox(NewOptionsDialog_PauseOnLostFocus, this, theApp->mPauseOnLostFocus);
 
     if (mFromGameSelector)
     {
@@ -223,6 +224,7 @@ NewOptionsDialog::~NewOptionsDialog()
     delete mDisplayModeButton;
     for (auto aButton : mPageButtons) delete aButton;
     delete mHardwareAccelerationCheckbox;
+    delete mPauseOnLostFocusCheckbox;
     delete mAlmanacButton;
     delete mRestartButton;
     delete mBackToMainButton;
@@ -246,6 +248,7 @@ void NewOptionsDialog::AddedToManager(Sexy::WidgetManager* theWidgetManager)
     AddWidget(mMusicVolumeSlider);
     AddWidget(mSfxVolumeSlider);
     AddWidget(mHardwareAccelerationCheckbox);
+    AddWidget(mPauseOnLostFocusCheckbox);
     AddWidget(mDisplayModeButton);
     for (auto aButton : mPageButtons) AddWidget(aButton);
     AddWidget(mBackToGameButton);
@@ -262,6 +265,7 @@ void NewOptionsDialog::RemovedFromManager(Sexy::WidgetManager* theWidgetManager)
     RemoveWidget(mDisplayModeButton);
     for (auto aButton : mPageButtons) RemoveWidget(aButton);
     RemoveWidget(mHardwareAccelerationCheckbox);
+    RemoveWidget(mPauseOnLostFocusCheckbox);
     RemoveWidget(mBackToMainButton);
     RemoveWidget(mBackToGameButton);
     RemoveWidget(mRestartButton);
@@ -277,6 +281,7 @@ void NewOptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
     mMusicVolumeSlider->Resize(199, 195, 135, 40);
     mSfxVolumeSlider->Resize(199, 244, 135, 40);
     mHardwareAccelerationCheckbox->Resize(283, 264, 46, 45);
+    mPauseOnLostFocusCheckbox->Resize(283, 157, 46, 45);
     mDisplayModeButton->Resize(85, 202, 252, kModeRowHeight);
     mAlmanacButton->Resize(107, 183, 209, 46);
     mRestartButton->Resize(mAlmanacButton->mX, mAlmanacButton->mY + 43, 209, 46);
@@ -306,14 +311,14 @@ void NewOptionsDialog::Draw(Sexy::Graphics* g)
         TodDrawString(g, aDescription[mDisplayModeSelection], 212, 328, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
         TodDrawString(g, _S("Alt+Enter toggles fullscreen."), 212, 349, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
     }
-    else if (!mGameActionsAvailable[0] && !mGameActionsAvailable[1] && !mGameActionsAvailable[2])
-    {
-        TodDrawString(g, _S("More options are available"), 212, 229, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
-        TodDrawString(g, _S("while playing a level."), 212, 252, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
-    }
     else
     {
-        TodDrawString(g, _S("GAME OPTIONS"), 212, 180, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
+        TodDrawString(g, _S("Pause When Unfocused"), 274, 180, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
+        if (!mGameActionsAvailable[0] && !mGameActionsAvailable[1] && !mGameActionsAvailable[2])
+        {
+            TodDrawString(g, _S("Turn off to keep playing"), 212, 244, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
+            TodDrawString(g, _S("when switching to other windows."), 212, 267, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
+        }
     }
 }
 
@@ -330,12 +335,13 @@ void NewOptionsDialog::SelectPage(SettingsPage thePage)
     mSfxVolumeSlider->SetVisible(thePage == PAGE_AUDIO);
     mDisplayModeButton->SetVisible(thePage == PAGE_DISPLAY);
     mHardwareAccelerationCheckbox->SetVisible(thePage == PAGE_DISPLAY);
+    mPauseOnLostFocusCheckbox->SetVisible(thePage == PAGE_GAME);
     mAlmanacButton->SetVisible(thePage == PAGE_GAME && mGameActionsAvailable[0]);
     mRestartButton->SetVisible(thePage == PAGE_GAME && mGameActionsAvailable[1]);
     mBackToMainButton->SetVisible(thePage == PAGE_GAME && mGameActionsAvailable[2]);
     if (thePage == PAGE_GAME)
     {
-        int aY = 200;
+        int aY = 220;
         LawnStoneButton* aButtons[] = {mAlmanacButton, mRestartButton, mBackToMainButton};
         for (auto aButton : aButtons)
         {
@@ -439,6 +445,10 @@ void NewOptionsDialog::CheckboxChecked(int theId, bool checked)
 {
     switch (theId)
     {
+    case NewOptionsDialog_PauseOnLostFocus:
+        mApp->SetPauseOnLostFocus(checked);
+        break;
+
     case NewOptionsDialog::NewOptionsDialog_HardwareAcceleration:
         if (checked)
         {
