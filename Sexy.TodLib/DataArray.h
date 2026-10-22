@@ -35,7 +35,7 @@ public:
 	const char*				mName;
 
 public:
-	DataArray<T>()
+	DataArray()
 	{
 		mBlock = nullptr;
 		mMaxUsedCount = 0U;
@@ -46,7 +46,7 @@ public:
 		mName = nullptr;
 	}
 
-	~DataArray<T>()
+	~DataArray()
 	{
 		DataArrayDispose();
 	}

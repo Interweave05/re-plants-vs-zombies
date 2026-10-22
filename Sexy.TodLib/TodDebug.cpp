@@ -80,6 +80,7 @@ void TodAssertFailed(const char* theCondition, const char* theFile, int theLine,
 
 
 		gInAssert = true;
+#ifdef _MSC_VER
 		LPEXCEPTION_POINTERS exp;
 
 		__try
@@ -90,6 +91,10 @@ void TodAssertFailed(const char* theCondition, const char* theFile, int theLine,
 		{
 			TodReportError(exp, aFormattedMsg);
 		}
+#else
+		// @Codex: MinGW routes the exception through the installed SEHCatcher filter.
+		RaiseException(EXCEPTION_NONCONTINUABLE_EXCEPTION, EXCEPTION_NONCONTINUABLE, 0, nullptr);
+#endif
 
 		gInAssert = false;
 		exit(0);
@@ -191,7 +196,7 @@ void TodTraceAndLog(const char* theFormat, ...)
 
 void TodTraceWithoutSpamming(const char* theFormat, ...)
 {
-	static __time64_t gLastTraceTime = 0i64;
+	static __time64_t gLastTraceTime = 0;
 	__time64_t aTime = _time64(nullptr);
 	if (aTime < gLastTraceTime)
 	{
