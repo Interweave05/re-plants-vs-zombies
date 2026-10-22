@@ -6097,9 +6097,7 @@ void SexyAppBase::Init()
 	if (!ChangeDirHook(mChangeDirTo.c_str()))
 		chdir(mChangeDirTo.c_str());
 
-	/*
 	gPakInterface->AddPakFile("main.pak");
-	*/
 
 	// Create a message we can use to talk to ourselves inter-process
 	mNotifyGameMessage = RegisterWindowMessage((_S("Notify") + StringToSexyString(mProdName)).c_str());
