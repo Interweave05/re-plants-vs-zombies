@@ -194,6 +194,13 @@ void WidgetManager::DoMouseUps(Widget* theWidget, ulong theDownCode)
 
 void WidgetManager::RemapMouse(int& theX, int& theY)
 {
+	if (mMouseSourceRect.mWidth <= 0 || mMouseSourceRect.mHeight <= 0 ||
+		(mApp->IsBorderlessFullscreen() && !mMouseSourceRect.Contains(theX, theY)))
+	{
+		// Black bars have no game hit targets, including partially offscreen widgets.
+		theX = theY = -10000;
+		return;
+	}
 	theX = ( theX - mMouseSourceRect.mX ) * mMouseDestRect.mWidth / mMouseSourceRect.mWidth + mMouseDestRect.mX;
 	theY = ( theY - mMouseSourceRect.mY ) * mMouseDestRect.mHeight / mMouseSourceRect.mHeight + mMouseDestRect.mY;
 }

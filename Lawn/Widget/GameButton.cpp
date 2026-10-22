@@ -29,14 +29,16 @@ void DrawStoneButton(Graphics* g, int x, int y, int theWidth, int theHeight, boo
 		aImageX++;
 	}
 
-	int aRepeat = (theWidth - aLeftImage->mWidth - aRightImage->mWidth) / aMiddleImage->mWidth;
+	int aMiddleWidth = std::max(0, theWidth - aLeftImage->mWidth - aRightImage->mWidth);
 	g->DrawImage(aLeftImage, aImageX, y);
 	aImageX += aLeftImage->mWidth;
-	while (aRepeat > 0)
+	while (aMiddleWidth > 0)
 	{
-		g->DrawImage(aMiddleImage, aImageX, y);
-		aImageX += aMiddleImage->mWidth;
-		--aRepeat;
+		// Short tabs and dropdowns also need the final partial tile.
+		int aTileWidth = std::min(aMiddleWidth, aMiddleImage->mWidth);
+		g->DrawImage(aMiddleImage, aImageX, y, Rect(0, 0, aTileWidth, aMiddleImage->mHeight));
+		aImageX += aTileWidth;
+		aMiddleWidth -= aTileWidth;
 	}
 	g->DrawImage(aRightImage, aImageX, y);
 

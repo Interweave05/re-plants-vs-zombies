@@ -25,6 +25,13 @@ namespace ImageLib
 namespace Sexy
 {
 
+enum class DisplayMode
+{
+	Windowed,
+	Fullscreen,
+	Borderless
+};
+
 class WidgetManager;
 class DDInterface;
 class Image;
@@ -171,6 +178,7 @@ public:
 	bool					mIsWindowed;
 	bool					mIsPhysWindowed;
 	bool					mFullScreenWindow; // uses ChangeDisplaySettings to run fullscreen with mIsWindowed true
+	bool					mUseBorderlessFullscreen;
 	bool					mForceFullscreen;
 	bool					mForceWindowed;	
 	bool					mInitialized;	
@@ -472,6 +480,9 @@ public:
 	void					RemoveMemoryImage(MemoryImage* theMemoryImage);
 	void					Remove3DData(MemoryImage* theMemoryImage);
 	virtual void			SwitchScreenMode();
+	bool					IsBorderlessFullscreen() const { return mUseBorderlessFullscreen && !mIsWindowed && !mPlayingDemoBuffer; }
+	DisplayMode				GetDisplayMode() const;
+	void					SetDisplayMode(DisplayMode theMode, bool is3d);
 	virtual void			SwitchScreenMode(bool wantWindowed);
 	virtual void			SwitchScreenMode(bool wantWindowed, bool is3d, bool force = false);
 	virtual void			SetAlphaDisabled(bool isDisabled);

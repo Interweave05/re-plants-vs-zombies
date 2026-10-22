@@ -64,6 +64,10 @@ static bool gScreenSaverActive = false;
 #define SPI_GETSCREENSAVERRUNNING 114
 #endif
 
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
+
 
 //HotSpot: 11 4
 //Size: 32 32
@@ -176,6 +180,7 @@ SexyAppBase::SexyAppBase()
 	mIsWindowed = true;
 	mIsPhysWindowed = true;
 	mFullScreenWindow = false;
+	mUseBorderlessFullscreen = false;
 	mPreferredX = -1;
 	mPreferredY = -1;
 	mIsScreenSaver = false;
@@ -1581,6 +1586,7 @@ void SexyAppBase::WriteToRegistry()
 	RegistryWriteInteger("SfxVolume", (int) (mSfxVolume * 100));
 	RegistryWriteInteger("Muted", (mMuteCount - mAutoMuteCount > 0) ? 1 : 0);
 	RegistryWriteInteger("ScreenMode", mIsWindowed ? 0 : 1);
+	RegistryWriteBoolean("BorderlessFullscreen", mUseBorderlessFullscreen);
 	RegistryWriteInteger("PreferredX", mPreferredX);
 	RegistryWriteInteger("PreferredY", mPreferredY);
 	RegistryWriteInteger("CustomCursors", mCustomCursorsEnabled ? 1 : 0);		
@@ -1914,6 +1920,7 @@ void SexyAppBase::ReadFromRegistry()
 
 	if (RegistryReadInteger("ScreenMode", &anInt))
 		mIsWindowed = anInt == 0;
+	RegistryReadBoolean("BorderlessFullscreen", &mUseBorderlessFullscreen);
 
 	RegistryReadInteger("PreferredX", &mPreferredX);
 	RegistryReadInteger("PreferredY", &mPreferredY);	
@@ -3435,6 +3442,7 @@ LRESULT CALLBACK SexyAppBase::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LP
 	case WM_CLOSE:
 	case WM_MOUSEWHEEL:
 	case WM_DISPLAYCHANGE:
+	case WM_DPICHANGED:
 	case WM_SYSCOLORCHANGE:
 		{
 /*			if (aSexyApp!=NULL && aSexyApp->mProcessInTimer && !aSexyApp->mShutdown && aSexyApp->mRunning)
@@ -4391,13 +4399,14 @@ bool SexyAppBase::ProcessDeferredMessages(bool singleMessage)
 				{
 					int x = (short) LOWORD(lParam);
 					int y = (short) HIWORD(lParam);
+					bool isInside = !IsBorderlessFullscreen() || mDDInterface->mPresentationRect.Contains(x, y);
 					mWidgetManager->RemapMouse(x, y);
 
 					mLastUserInputTick = mLastTimerTime;
 					
 					mWidgetManager->MouseMove(x, y);		
 
-					if (!mMouseIn)
+					if (isInside && !mMouseIn)
 					{
 						if (mRecordingDemoBuffer)
 						{
@@ -4407,6 +4416,12 @@ bool SexyAppBase::ProcessDeferredMessages(bool singleMessage)
 						}
 
 						mMouseIn = true;
+						EnforceCursor();
+					}
+					else if (!isInside && mMouseIn)
+					{
+						mWidgetManager->MouseExit(x, y);
+						mMouseIn = false;
 						EnforceCursor();
 					}
 
@@ -4460,7 +4475,7 @@ bool SexyAppBase::ProcessDeferredMessages(bool singleMessage)
 			case WM_SYSKEYDOWN:
 				mLastUserInputTick = mLastTimerTime;
 
-				if (wParam==VK_RETURN && uMsg==WM_SYSKEYDOWN && !mForceFullscreen && !mForceWindowed && mAllowAltEnter)
+				if (wParam==VK_RETURN && uMsg==WM_SYSKEYDOWN && !mForceFullscreen && (!mForceWindowed || mUseBorderlessFullscreen) && mAllowAltEnter)
 				{
 					SwitchScreenMode(!mIsWindowed);
 					ClearKeysDown();
@@ -4571,6 +4586,8 @@ bool SexyAppBase::ProcessDeferredMessages(bool singleMessage)
 					bool isMouseIn = (aWindow == hWnd) && 
 						(aPoint.x >= aULCorner.x) && (aPoint.y >= aULCorner.y) &&
 						(aPoint.x < aBRCorner.x) && (aPoint.y < aBRCorner.y);
+					if (IsBorderlessFullscreen())
+						isMouseIn = isMouseIn && mDDInterface->mPresentationRect.Contains(aPoint.x - aULCorner.x, aPoint.y - aULCorner.y);
 
 					if (mMouseIn != isMouseIn)
 					{
@@ -4601,6 +4618,9 @@ bool SexyAppBase::ProcessDeferredMessages(bool singleMessage)
 
 			case WM_SYSCOLORCHANGE:
 			case WM_DISPLAYCHANGE:
+			case WM_DPICHANGED:
+				if (IsBorderlessFullscreen() && uMsg != WM_SYSCOLORCHANGE)
+					SwitchScreenMode(false, Is3DAccelerated(), true);
 				mWidgetManager->SysColorChangedAll();
 				mWidgetManager->MarkAllDirty();
 				break;
@@ -4642,6 +4662,10 @@ std::string	SexyAppBase::NotifyCrashHook()
 void SexyAppBase::MakeWindow()
 {
 	//OutputDebugString("MAKING WINDOW\r\n");
+	HMONITOR aMonitor = MonitorFromWindow(mHWnd, MONITOR_DEFAULTTOPRIMARY);
+	MONITORINFO aMonitorInfo = {};
+	aMonitorInfo.cbSize = sizeof(aMonitorInfo);
+	GetMonitorInfo(aMonitor, &aMonitorInfo);
 
 	if (mHWnd != NULL)
 	{
@@ -4721,6 +4745,16 @@ void SexyAppBase::MakeWindow()
 				aWidth, aHeight, FALSE);
 		}
 
+		mIsPhysWindowed = true;
+	}
+	else if (IsBorderlessFullscreen())
+	{
+		const RECT& aBounds = aMonitorInfo.rcMonitor;
+		mHWnd = CreateWindowEx(0, _S("MainWindow"), SexyStringToStringFast(mTitle).c_str(),
+			WS_POPUP | WS_CLIPCHILDREN, aBounds.left, aBounds.top,
+			aBounds.right - aBounds.left, aBounds.bottom - aBounds.top,
+			NULL, NULL, gHInstance, 0);
+		// DirectDraw stays cooperative with the desktop; no display mode switch.
 		mIsPhysWindowed = true;
 	}
 	else
@@ -4978,6 +5012,28 @@ void SexyAppBase::StartCursorThread()
 		::SetThreadPriority(::GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
 		_beginthread(CursorThreadProcStub, 0, this);
 	}
+}
+
+DisplayMode SexyAppBase::GetDisplayMode() const
+{
+	return mIsWindowed ? DisplayMode::Windowed :
+		(mUseBorderlessFullscreen ? DisplayMode::Borderless : DisplayMode::Fullscreen);
+}
+
+void SexyAppBase::SetDisplayMode(DisplayMode theMode, bool is3d)
+{
+	bool wantWindowed = theMode == DisplayMode::Windowed;
+	if ((wantWindowed && mForceFullscreen) || (theMode == DisplayMode::Fullscreen && mForceWindowed))
+		return;
+	bool aForce = false;
+	if (!wantWindowed)
+	{
+		bool useBorderless = theMode == DisplayMode::Borderless;
+		aForce = useBorderless != mUseBorderlessFullscreen;
+		mUseBorderlessFullscreen = useBorderless;
+	}
+	// Keep the chosen fullscreen type when returning to a normal window.
+	SwitchScreenMode(wantWindowed, is3d, aForce);
 }
 
 void SexyAppBase::SwitchScreenMode(bool wantWindowed, bool is3d, bool force)

@@ -4,57 +4,78 @@
 #include "widget/Dialog.h"
 #include "widget/SliderListener.h"
 #include "widget/CheckboxListener.h"
+#include "widget/ListListener.h"
 
 class LawnApp;
 class LawnStoneButton;
 class NewLawnButton;
 namespace Sexy
 {
-	class Slider;
-	class Checkbox;
-};
+    class Slider;
+    class Checkbox;
+    class ListWidget;
+    enum class DisplayMode;
+}
 
-class NewOptionsDialog : public Sexy::Dialog, public Sexy::SliderListener, public Sexy::CheckboxListener
+class NewOptionsDialog : public Sexy::Dialog, public Sexy::SliderListener, public Sexy::CheckboxListener, public Sexy::ListListener
 {
 protected:
-	enum
-	{
-		NewOptionsDialog_Almanac,
-		NewOptionsDialog_MainMenu,
-		NewOptionsDialog_Restart,
-		NewOptionsDialog_Update,
-		NewOptionsDialog_MusicVolume,
-		NewOptionsDialog_SoundVolume,
-		NewOptionsDialog_Fullscreen,
-		NewOptionsDialog_HardwareAcceleration,
-	};
+    enum
+    {
+        NewOptionsDialog_Almanac,
+        NewOptionsDialog_MainMenu,
+        NewOptionsDialog_Restart,
+        NewOptionsDialog_Update,
+        NewOptionsDialog_MusicVolume,
+        NewOptionsDialog_SoundVolume,
+        NewOptionsDialog_DisplayMode,
+        NewOptionsDialog_HardwareAcceleration,
+        NewOptionsDialog_PageFirst = 100
+    };
 
 public:
-	LawnApp*				mApp;								//+0x158
-	Sexy::Slider*			mMusicVolumeSlider;					//+0x15C
-	Sexy::Slider*			mSfxVolumeSlider;					//+0x160
-	Sexy::Checkbox*			mFullscreenCheckbox;				//+0x164
-	Sexy::Checkbox*			mHardwareAccelerationCheckbox;		//+0x168
-	LawnStoneButton*		mAlmanacButton;						//+0x16C
-	LawnStoneButton*		mBackToMainButton;					//+0x170
-	LawnStoneButton*		mRestartButton;						//+0x174
-	NewLawnButton*			mBackToGameButton;					//+0x178
-	bool					mFromGameSelector;					//+0x17C
+    enum SettingsPage { PAGE_AUDIO, PAGE_DISPLAY, PAGE_GAME, NUM_PAGES };
 
-public:
-	NewOptionsDialog(LawnApp* theApp, bool theFromGameSelector);
-	~NewOptionsDialog();
+    LawnApp* mApp;
+    Sexy::Slider* mMusicVolumeSlider;
+    Sexy::Slider* mSfxVolumeSlider;
+    Sexy::Checkbox* mHardwareAccelerationCheckbox;
+    LawnStoneButton* mDisplayModeButton;
+    Sexy::ListWidget* mDisplayModeList;
+    LawnStoneButton* mPageButtons[NUM_PAGES];
+    SettingsPage mSettingsPage;
+    int mDisplayModeSelection;
+    bool mDisplayModeOpen;
+    bool mGameActionsAvailable[3];
+    LawnStoneButton* mAlmanacButton;
+    LawnStoneButton* mBackToMainButton;
+    LawnStoneButton* mRestartButton;
+    NewLawnButton* mBackToGameButton;
+    bool mFromGameSelector;
 
-	int						GetPreferredHeight(int theWidth);
-	void					AddedToManager(Sexy::WidgetManager* theWidgetManager);
-	void					RemovedFromManager(Sexy::WidgetManager* theWidgetManager);
-	void					Resize(int theX, int theY, int theWidth, int theHeight);
-	void					Draw(Sexy::Graphics* g);
-	void					SliderVal(int theId, double theVal);
-	void					CheckboxChecked(int theId, bool checked);
-	void					ButtonPress(int theId);
-	void					ButtonDepress(int theId);
-	void					KeyDown(Sexy::KeyCode theKey);
+    NewOptionsDialog(LawnApp* theApp, bool theFromGameSelector);
+    ~NewOptionsDialog();
+
+    int GetPreferredHeight(int theWidth);
+    void AddedToManager(Sexy::WidgetManager* theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager* theWidgetManager);
+    void Resize(int theX, int theY, int theWidth, int theHeight);
+    void Draw(Sexy::Graphics* g);
+    void SliderVal(int theId, double theVal);
+    void CheckboxChecked(int theId, bool checked);
+    void ButtonPress(int theId);
+    void ButtonDepress(int theId);
+    void KeyDown(Sexy::KeyCode theKey);
+
+    void SelectPage(SettingsPage thePage);
+    void OpenDisplayModeList();
+    void CloseDisplayModeList();
+    bool IsDisplayModeAvailable(int theIndex) const;
+    Sexy::DisplayMode GetSelectedDisplayMode() const;
+    void SyncDisplayMode();
+    void ListClicked(int theId, int theIdx, int theClickCount);
+    void ListClosed(int theId);
+    void ListHiliteChanged(int theId, int theOldIdx, int theNewIdx);
 };
 
 #endif

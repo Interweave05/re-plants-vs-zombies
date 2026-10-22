@@ -11,6 +11,7 @@
 #include "misc/Debug.h"
 #include "misc/DirectXErrorString.h"
 #include "MemoryImage.h"
+#include "Presentation.h"
 
 using namespace Sexy;
 
@@ -299,6 +300,7 @@ int DDInterface::Init(HWND theWindow, bool IsWindowed)
 	mHasOldCursorArea = false;
 
 	OutputDebug(_S("Application requests %4lu x %4lu [%2d:%2d]\n"), mWidth, mHeight, mAspect.mNumerator, mAspect.mDenominator);
+	mIsWidescreen = false;
 
 	if (GotDXError(aResult, "DirectDrawCreate"))
 		return RESULT_DD_CREATE_FAIL;	
@@ -307,7 +309,15 @@ int DDInterface::Init(HWND theWindow, bool IsWindowed)
 	{
 		OutputDebug(_S("Hack aspect is                   [%2d:%2d]\n"), mApp->mWindowAspect.mNumerator, mApp->mWindowAspect.mDenominator);
 
-		if ( mApp->mEnableWindowAspect && mAspect < mApp->mWindowAspect )
+		if (mApp->IsBorderlessFullscreen())
+		{
+			mDisplayWidth = aRect.right - aRect.left;
+			mDisplayHeight = aRect.bottom - aRect.top;
+			mDisplayAspect.Set(mDisplayWidth, mDisplayHeight);
+			mPresentationRect = FitPresentationRect(mWidth, mHeight, mDisplayWidth, mDisplayHeight);
+			mIsWidescreen = true; // Always present the entire scaled canvas.
+		}
+		else if ( mApp->mEnableWindowAspect && mAspect < mApp->mWindowAspect )
 		{
 			mIsWidescreen = true;
 
@@ -938,6 +948,38 @@ bool DDInterface::Redraw(Rect* theClipRect)
 	mDrawSurface->Lock(NULL,&aDesc,DDLOCK_SURFACEMEMORYPTR|DDLOCK_WAIT|DDLOCK_READONLY ,0);
 	mDrawSurface->Unlock(NULL);
 
+	if (mApp->IsBorderlessFullscreen())
+	{
+		// Fill only this client's bars, never the entire desktop primary surface.
+		const Rect& aView = mPresentationRect;
+		Rect aBars[] = {
+			Rect(0, 0, mDisplayWidth, aView.mY),
+			Rect(0, aView.mY + aView.mHeight, mDisplayWidth, mDisplayHeight - aView.mY - aView.mHeight),
+			Rect(0, aView.mY, aView.mX, aView.mHeight),
+			Rect(aView.mX + aView.mWidth, aView.mY, mDisplayWidth - aView.mX - aView.mWidth, aView.mHeight)
+		};
+		HRESULT aResult = DD_OK;
+		aBltFX.dwFillColor = 0;
+		for (const Rect& aBar : aBars)
+		{
+			if (aBar.mWidth <= 0 || aBar.mHeight <= 0)
+				continue;
+			RECT aBarRect = aBar.ToRECT();
+			OffsetRect(&aBarRect, aPoint.x, aPoint.y);
+			aResult = mPrimarySurface->Blt(&aBarRect, NULL, NULL, DDBLT_COLORFILL | DDBLT_WAIT, &aBltFX);
+			if (FAILED(aResult))
+				break;
+		}
+		mCursorX = mNextCursorX;
+		mCursorY = mNextCursorY;
+		DrawCursorTo(mDrawSurface, false);
+		if (SUCCEEDED(aResult))
+			aResult = mPrimarySurface->Blt(&aDestRect, mDrawSurface, &aSrcRect, DDBLT_WAIT, &aBltFX);
+		RestoreOldCursorAreaFrom(mDrawSurface, false);
+		mInRedraw = false;
+		return !GotDXError(aResult, "Redraw Borderless Blt");
+	}
+
 	if (mIsWindowed)
 	{
 		HRESULT aResult;
@@ -1117,9 +1159,13 @@ void DDInterface::RestoreOldCursorAreaFrom(LPDIRECTDRAWSURFACE theSurface, bool 
 {
 	if ((mHasOldCursorArea) && (mPrimarySurface != NULL))
 	{
+		int aCursorX = mCursorX;
+		int aCursorY = mCursorY;
+		if (mApp->IsBorderlessFullscreen() && theSurface == mDrawSurface)
+			RemapMouse(aCursorX, aCursorY);
 		Rect aSexyScreenRect(
-			mCursorX - (mCursorWidth / 2),
-			mCursorY - (mCursorHeight / 2),
+			aCursorX - (mCursorWidth / 2),
+			aCursorY - (mCursorHeight / 2),
 			mCursorWidth,
 			mCursorHeight);
 
@@ -1155,6 +1201,18 @@ void DDInterface::RestoreOldCursorAreaFrom(LPDIRECTDRAWSURFACE theSurface, bool 
 
 void DDInterface::DrawCursorTo(LPDIRECTDRAWSURFACE theSurface, bool adjust)
 {
+	bool isScaledCanvas = mApp->IsBorderlessFullscreen() && theSurface == mDrawSurface;
+	int aCursorX = mCursorX;
+	int aCursorY = mCursorY;
+	if (isScaledCanvas)
+	{
+		if (!mPresentationRect.Contains(aCursorX, aCursorY))
+		{
+			mHasOldCursorArea = false;
+			return;
+		}
+		RemapMouse(aCursorX, aCursorY);
+	}
 	if ((mCursorImage != NULL) && (mPrimarySurface != NULL))
 	{
 		DDSURFACEDESC aDesc;
@@ -1165,12 +1223,12 @@ void DDInterface::DrawCursorTo(LPDIRECTDRAWSURFACE theSurface, bool adjust)
 		Rect aDestSurfaceRect(0, 0, aDesc.dwWidth, aDesc.dwHeight);
 
 		Rect aSexyScreenRect(
-			mCursorX - (mCursorWidth / 2),
-			mCursorY - (mCursorHeight / 2),
+			aCursorX - (mCursorWidth / 2),
+			aCursorY - (mCursorHeight / 2),
 			mCursorWidth,
 			mCursorHeight);
 
-		Rect aClippedScreenRect = aSexyScreenRect.Intersection(mPresentationRect);
+		Rect aClippedScreenRect = aSexyScreenRect.Intersection(isScaledCanvas ? Rect(0, 0, mWidth, mHeight) : mPresentationRect);
 						
 		Rect aSexyLocalRect(
 			aClippedScreenRect.mX - aSexyScreenRect.mX, 
@@ -1220,8 +1278,8 @@ void DDInterface::DrawCursorTo(LPDIRECTDRAWSURFACE theSurface, bool adjust)
 			// Draw directly to the screen image, instead of indirectly through mNewCursorArea
 			Graphics g(mScreenImage);
 			g.DrawImage(mCursorImage, 
-				mCursorX - (mCursorWidth / 2) + (mCursorWidth - mCursorImage->mWidth)/2, 
-				mCursorY - (mCursorHeight / 2) + (mCursorHeight - mCursorImage->mHeight)/2);				
+				aCursorX - (mCursorWidth / 2) + (mCursorWidth - mCursorImage->mWidth)/2,
+				aCursorY - (mCursorHeight / 2) + (mCursorHeight - mCursorImage->mHeight)/2);
 		}
 		else
 		{
@@ -1417,6 +1475,13 @@ void DDInterface::SetCursorPos(int theCursorX, int theCursorY)
 {
 	mNextCursorX = theCursorX;
 	mNextCursorY = theCursorY;
+
+	if (mApp->IsBorderlessFullscreen())
+	{
+		// Partial primary-surface cursor blits assume a 1:1 canvas.
+		mApp->mCustomCursorDirty = true;
+		return;
+	}
 
 	if (mInRedraw)
 		return;
