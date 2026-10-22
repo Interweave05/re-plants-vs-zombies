@@ -219,7 +219,7 @@ bool ReportAchievement::GiveAchievement(LawnApp* theApp, int theAchievement, boo
 
 	theApp->mPlayerInfo->mEarnedAchievements[theAchievement] = true;
 
-	if (!theForceGive)
+	if (!theForceGive || !theApp->mBoard)
 		return true;
 
 	std::string aAchievementName = gAchievementList[theAchievement].name;
