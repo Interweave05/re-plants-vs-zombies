@@ -25,6 +25,9 @@ AwardScreen::AwardScreen(LawnApp* theApp, AwardType theAwardType, bool theShowin
 	mFadeInCounter = 180;
 	mAwardType = theAwardType;
 	mShowingAchievements = theShowingAchievements;
+	mAchievementAnimTime = 0;
+	mShowStartButtonAfterAchievements = false;
+	mShowMenuButtonAfterAchievements = false;
 	TodLoadResources("DelayLoad_AwardScreen");
 
 	// @Patoke: implemented
@@ -60,6 +63,8 @@ AwardScreen::AwardScreen(LawnApp* theApp, AwardType theAwardType, bool theShowin
 
 		mApp->WriteCurrentUserConfig();
 	}
+	// A level reward may request achievements even when none are waiting to be shown.
+	mShowingAchievements = theShowingAchievements && !mAchievementItems.empty();
 
 	int aLevel = mApp->mPlayerInfo->GetLevel();
 	if (mAwardType == AWARD_CREDITS_ZOMBIENOTE)
@@ -423,10 +428,10 @@ void AwardScreen::Update()
 				mAchievementItems[i].mY = TodAnimateCurve(mAchievementItems[i].mStartAnimTime, mAchievementItems[i].mEndAnimTime, mAchievementAnimTime, mAchievementItems[i].mStartY, mAchievementItems[i].mDestY, CURVE_EASE_IN_OUT);
 			}
 
-			if (mAchievementItems[mAchievementItems.size() - 1].mY == mAchievementItems[mAchievementItems.size() - 1].mDestY) {
-				mContinueButton->mBtnNoDraw = false;
-				mContinueButton->mDisabled = false;
-			}
+		}
+		if (mAchievementItems.empty() || mAchievementAnimTime >= mAchievementItems.back().mEndAnimTime) {
+			mContinueButton->mBtnNoDraw = false;
+			mContinueButton->mDisabled = false;
 		}
 	}
 
@@ -434,7 +439,7 @@ void AwardScreen::Update()
 	mStartButton->Update();
 	mMenuButton->Update();
 	mContinueButton->Update(); // @Patoke: add call
-	mApp->SetCursor(mStartButton->IsMouseOver() || mMenuButton->IsMouseOver() ? CURSOR_HAND : CURSOR_POINTER);
+	mApp->SetCursor(mStartButton->IsMouseOver() || mMenuButton->IsMouseOver() || mContinueButton->IsMouseOver() ? CURSOR_HAND : CURSOR_POINTER);
 	MarkDirty();
 	if (mFadeInCounter > 0) mFadeInCounter--;
 }
@@ -452,6 +457,12 @@ void AwardScreen::StartButtonPressed()
 {
 	if (mApp->GetDialog(DIALOG_STORE))
 		return;
+
+	if (mShowingAchievements)
+	{
+		AchievementsContinuePressed();
+		return;
+	}
 
 	if (mAwardType == AWARD_CREDITS_ZOMBIENOTE)
 	{
@@ -558,7 +569,7 @@ void AwardScreen::MouseDown(int x, int y, int theClickCount)
 		mStartButton->Update(); // @Patoke: implemented
 		mMenuButton->Update();
 		mContinueButton->Update();
-		if (mStartButton->IsMouseOver() || mMenuButton->IsMouseOver())
+		if (mStartButton->IsMouseOver() || mMenuButton->IsMouseOver() || mContinueButton->IsMouseOver())
 			mApp->PlaySample(Sexy::SOUND_TAP);
 	}
 }
@@ -601,13 +612,13 @@ void AwardScreen::DrawAchievements(Graphics* g) {
 		aAchievementName.append(" Earned!");
 
 		Rect aSrcRect = Rect(70 * (mAchievementItems[i].mId % 7), 70 * (mAchievementItems[i].mId / 7), 70, 70);
-		Rect aDestRect = Rect(70, 70, 70, 70);
-		Rect aTextRect = Rect(300, mAchievementItems[i].mY + 20, 300, 60);
+		Rect aDestRect = Rect(210, mAchievementItems[i].mY, 70, 70);
+		Rect aTextRect = Rect(300, mAchievementItems[i].mY + 24, 400, 46);
 
 		g->DrawImage(IMAGE_ACHEESEMENTS_ICONS, aDestRect, aSrcRect);
 
-		TodDrawString(g, aAchievementName, BOARD_WIDTH / 2, mAchievementItems[i].mY + 25, FONT_DWARVENTODCRAFT15, Color(224, 187, 98), DS_ALIGN_CENTER);
-		TodDrawStringWrapped(g, aAchievementName, aTextRect, FONT_DWARVENTODCRAFT12, Color(255, 255, 255), DS_ALIGN_CENTER_VERTICAL_MIDDLE);
+		TodDrawString(g, aAchievementName, 300, mAchievementItems[i].mY + 20, FONT_DWARVENTODCRAFT15, Color(224, 187, 98), DS_ALIGN_LEFT);
+		TodDrawStringWrapped(g, aAchievementDesc, aTextRect, FONT_DWARVENTODCRAFT12, Color(255, 255, 255), DS_ALIGN_CENTER_VERTICAL_MIDDLE);
 	}
 }
 
