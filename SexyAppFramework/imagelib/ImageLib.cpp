@@ -77,13 +77,13 @@ Image* GetPNGImage(const std::string& theFileName)
 
 	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
 	  NULL, NULL, NULL);
-	png_set_read_fn(png_ptr, (png_voidp)fp, png_pak_read_data);
 
 	if (png_ptr == NULL)
 	{
 		p_fclose(fp);
 		return NULL;
 	}
+	png_set_read_fn(png_ptr, (png_voidp)fp, png_pak_read_data);
 
 	/* Allocate/initialize the memory for image information.  REQUIRED. */
 	info_ptr = png_create_info_struct(png_ptr);
@@ -111,6 +111,11 @@ Image* GetPNGImage(const std::string& theFileName)
 
 	//png_ptr->io_ptr = (png_voidp)fp;
 
+#ifdef PNG_HANDLE_AS_UNKNOWN_SUPPORTED
+	// @Codex: The renderer uses pixel data without ICC color management.
+	const png_byte unused_chunks[] = { 'i', 'C', 'C', 'P', '\0' };
+	png_set_keep_unknown_chunks(png_ptr, PNG_HANDLE_CHUNK_NEVER, unused_chunks, 1);
+#endif
 	png_read_info(png_ptr, info_ptr);
 	png_get_IHDR(png_ptr, info_ptr, &width, &height, NULL, NULL,
        NULL, NULL, NULL);
