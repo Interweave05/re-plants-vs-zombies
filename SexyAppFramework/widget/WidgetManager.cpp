@@ -186,7 +186,8 @@ void WidgetManager::DoMouseUps(Widget* theWidget, ulong theDownCode)
 		if ((theDownCode & (1 << i)) != 0)
 		{
 			theWidget->mIsDown = false;
-			theWidget->MouseUp(mLastMouseX - theWidget->mX, mLastMouseY - theWidget->mY, aClickCountTable[i]);
+			Point anAbsPos = theWidget->GetAbsPos();
+			theWidget->MouseUp(mLastMouseX - anAbsPos.mX, mLastMouseY - anAbsPos.mY, aClickCountTable[i]);
 		}
 	}
 }
@@ -594,7 +595,8 @@ bool WidgetManager::MouseUp(int x, int y, int theClickCount)
 			mLastDownWidget = NULL;
 
 		aLastDownWidget->mIsDown = false;
-		aLastDownWidget->MouseUp(x - aLastDownWidget->mX, y - aLastDownWidget->mY, theClickCount);
+		Point anAbsPos = aLastDownWidget->GetAbsPos();
+		aLastDownWidget->MouseUp(x - anAbsPos.mX, y - anAbsPos.mY, theClickCount);
 	}	
 	else
 		mDownButtons &= ~aMask;		

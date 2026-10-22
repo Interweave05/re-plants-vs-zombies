@@ -44,6 +44,8 @@ GameSelector::GameSelector(LawnApp* theApp)
 	TodLoadResources("DelayLoad_Zombatar");
 
 	mApp = theApp;
+	// @Codex: The achievements panel extends below the main menu viewport.
+	mClip = false;
 	mLevel = 1;
 	mLoading = false;
 	mHasTrophy = false;
@@ -265,7 +267,7 @@ GameSelector::GameSelector(LawnApp* theApp)
 		Sexy::IMAGE_QUICKPLAY_BACK_BUTTON_HIGHLIGHT,
 		Sexy::IMAGE_QUICKPLAY_BACK_BUTTON_HIGHLIGHT
 	);
-	mQuickPlayButton->Resize(mApp->mWidth - 150, 455, Sexy::IMAGE_QUICKPLAY_BACK_BUTTON->mWidth, Sexy::IMAGE_QUICKPLAY_BACK_BUTTON->mHeight);
+	mQuickPlayButton->Resize(-150, 455, Sexy::IMAGE_QUICKPLAY_BACK_BUTTON->mWidth, Sexy::IMAGE_QUICKPLAY_BACK_BUTTON->mHeight);
 
 	mApp->mMusic->MakeSureMusicIsPlaying(MusicTune::MUSIC_TUNE_TITLE_CRAZY_DAVE_MAIN_THEME);
 
@@ -361,6 +363,7 @@ GameSelector::GameSelector(LawnApp* theApp)
 //0x449D00、0x449D20
 GameSelector::~GameSelector()
 {
+	RemoveAllWidgets(false);
 	if (mAdventureButton)
 		delete mAdventureButton;
 	if (mMinigameButton)
@@ -585,7 +588,6 @@ void GameSelector::Draw(Graphics* g)
 	// @Patoke: decided to manually inline these methods as i cannot be arsed to figure out what the name of the 2 functions called in here are
 	// GOTY @Patoke: 0x44FD20
 	g->SetLinearBlend(true);
-	g->Translate(800, 0);
 
 	Reanimation* aSelectorReanim = mApp->ReanimationGet(mSelectorReanimID);
 	aSelectorReanim->DrawRenderGroup(g, 1);  // "SelectorScreen_BG"
@@ -593,7 +595,6 @@ void GameSelector::Draw(Graphics* g)
 		mApp->ReanimationGet(mCloudReanimID[i])->Draw(g);
 	aSelectorReanim->DrawRenderGroup(g, RENDER_GROUP_NORMAL);
 
-	g->Translate(-800, 0);
 	if (mSelectorState == SelectorAnimState::SELECTOR_OPEN)
 	{
 		int aBGIdx = aSelectorReanim->FindTrackIndex("SelectorScreen_BG_Right");
@@ -628,17 +629,18 @@ void GameSelector::Draw(Graphics* g)
 		aSelectorReanim->GetAttachmentOverlayMatrix(aSignIdx, aOverlayMatrix);
 		float aStringWidth = Sexy::FONT_BRIANNETOD16->StringWidth(aWelcomeStr);
 		SexyTransform2D aOffsetMatrix;
-		// @Patoke: add position so it moves when sliding to position
-		aOffsetMatrix.Translate(170.5f - (int)(aStringWidth * 0.5f) + mX, 102.5f + mY);
+		aOffsetMatrix.Translate(170.5f - (int)(aStringWidth * 0.5f), 102.5f);
 		TodDrawStringMatrix(g, Sexy::FONT_BRIANNETOD16, aOverlayMatrix * aOffsetMatrix, aWelcomeStr, Color(255, 245, 200));
 
 	}
 	 
 	// GOTY @Patoke: 0x4500E0
+	g->Translate(-mWidth, 0);
 	g->DrawImage(IMAGE_SELECTORSCREEN_MOREWAYSTOPLAY_BG, M(0), M(0));
 	g->DrawImage(IMAGE_QUICKPLAY_MINIGAMES_CLOUD, M(20), M(40));
 	g->DrawImage(IMAGE_QUICKPLAY_PUZZLES_CLOUD, M(350), M(285));
 	g->DrawImage(IMAGE_QUICKPLAY_SURVIVAL_CLOUD, M(130), M(135));
+	g->Translate(mWidth, 0);
 }
 
 //0x44AB50
@@ -725,9 +727,7 @@ void GameSelector::DrawOverlay(Graphics* g)
 		g->ClearClipRect();
 	}
 
-	g->Translate(-(mX + 800), 0);
 	mApp->ReanimationGet(mLeafReanimID)->Draw(g);
-	g->Translate(mX + 800, 0);
 
 	for (int i = 0; i < 3; i++)
 		mApp->ReanimationGet(mFlowerReanimID[i])->Draw(g);
@@ -811,27 +811,10 @@ void GameSelector::Update()
 
 	// @Patoke: implemented this
 	if (mSlideCounter > 0) {
+		mSlideCounter--;
 		int aNewX = TodAnimateCurve(75, 0, mSlideCounter, mStartX, mDestX, TodCurves::CURVE_EASE_IN_OUT);
 		int aNewY = TodAnimateCurve(75, 0, mSlideCounter, mStartY, mDestY, TodCurves::CURVE_EASE_IN_OUT);
 		Move(aNewX, aNewY);
-
-		// @Patoke: not from the original binaries but fixes bugs
-		mOverlayWidget->Move(aNewX, aNewY);
-		mAchievementsWidget->mY = aNewY + mApp->mHeight - 1;
-		mAdventureButton->SetOffset(aNewX, aNewY);
-		mMinigameButton->SetOffset(aNewX, aNewY);
-		mPuzzleButton->SetOffset(aNewX, aNewY);
-		mOptionsButton->SetOffset(aNewX, aNewY + 15);
-		mQuitButton->SetOffset(aNewX, aNewY + 5);
-		mHelpButton->SetOffset(aNewX, aNewY + 30);
-		mStoreButton->SetOffset(aNewX, aNewY);
-		mAlmanacButton->SetOffset(aNewX, aNewY);
-		mZenGardenButton->SetOffset(aNewX, aNewY);
-		mSurvivalButton->SetOffset(aNewX, aNewY);
-		mChangeUserButton->SetOffset(aNewX, aNewY);
-		mZombatarButton->SetOffset(aNewX, aNewY);
-		mAchievementsButton->SetOffset(aNewX, aNewY);
-		mQuickPlayButton->SetOffset(aNewX, aNewY);
 
 		// @Patoke: make sure these are drawn even outside of bounds (force redraw)
 		mAchievementsButton->MarkDirty();
@@ -840,7 +823,6 @@ void GameSelector::Update()
 		mQuitButton->MarkDirty();
 		mStoreButton->MarkDirty();
 
-		mSlideCounter--;
 	}
 
 	mApp->mZenGarden->UpdatePlantNeeds();
@@ -1043,7 +1025,6 @@ void GameSelector::TrackButton(DialogButton* theButton, const char* theTrackName
 void GameSelector::AddedToManager(WidgetManager* theWidgetManager)
 {
 	Widget::AddedToManager(theWidgetManager);
-	this->Move(-800, 0);
 }
 
 //0x44BCA0
