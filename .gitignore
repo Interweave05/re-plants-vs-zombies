@@ -3,6 +3,34 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# CLion / JetBrains local project settings
+.idea/
+*.iml
+
+# CMake build trees, downloaded dependencies, and local presets
+cmake-build*/
+/cmake-build/
+/build-*/
+/_build/
+CMakeUserPresets.json
+CTestCustom.cmake
+Testing/
+
+# Ninja generated files (including in-source builds)
+build.ninja
+rules.ninja
+.ninja_deps
+.ninja_log
+
+# Editor caches, backups, and operating system metadata
+.cache/
+.history/
+*.swp
+*.swo
+*.bak
+Thumbs.db
+Desktop.ini
+
 # User-specific files
 *.rsuser
 *.suo
