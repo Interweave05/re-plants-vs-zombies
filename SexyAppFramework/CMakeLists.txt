@@ -226,6 +226,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     ".gitignore"
     "resource.h"
     "LawnProject.rc"
+    "LawnProject.manifest"
 )
 
 use_props(${PROJECT_NAME} "${CMAKE_CONFIGURATION_TYPES}" "${DEFAULT_CXX_PROPS}")

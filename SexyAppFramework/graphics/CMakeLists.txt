@@ -11,6 +11,7 @@ target_sources(${PROJECT_NAME} PRIVATE
     DDImage.h
     DDInterface.cpp
     DDInterface.h
+    Presentation.h
     Font.cpp
     Font.h
     Graphics.cpp
