@@ -52,7 +52,7 @@ public:
         if (mInverted)
         {
             g->SetColor(Color(119, 179, 57));
-            g->DrawLine(17, 29, mWidth - 17, 29);
+            g->DrawLine(17, mHeight - 7, mWidth - 17, mHeight - 7);
         }
     }
 };
@@ -282,11 +282,11 @@ void NewOptionsDialog::Resize(int theX, int theY, int theWidth, int theHeight)
     Dialog::Resize(theX, theY, theWidth, theHeight);
     CloseDisplayModeList();
     for (int i = 0; i < NUM_PAGES; i++)
-        mPageButtons[i]->Resize(66 + i * 98, 111, 96, 33);
+        mPageButtons[i]->Resize(66 + i * 98, 128, 96, 38);
     mMusicVolumeSlider->Resize(199, 195, 135, 40);
     mSfxVolumeSlider->Resize(199, 244, 135, 40);
     mHardwareAccelerationCheckbox->Resize(283, 264, 46, 45);
-    mPauseOnLostFocusCheckbox->Resize(283, 157, 46, 45);
+    mPauseOnLostFocusCheckbox->Resize(283, 171, 46, 38);
     mDisplayModeButton->Resize(85, 202, 252, kModeRowHeight);
     mAlmanacButton->Resize(107, 183, 209, 46);
     mRestartButton->Resize(mAlmanacButton->mX, mAlmanacButton->mY + 43, 209, 46);
@@ -304,7 +304,7 @@ void NewOptionsDialog::Draw(Sexy::Graphics* g)
     Sexy::Color aTextColor(107, 109, 145);
     if (mSettingsPage == PAGE_AUDIO)
     {
-        TodDrawString(g, _S("VOLUME"), 212, 180, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
+        TodDrawString(g, _S("VOLUME"), 212, 190, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
         TodDrawString(g, _S("Music"), 186, 219, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
         TodDrawString(g, _S("Sound FX"), 186, 268, FONT_DWARVENTODCRAFT18, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
         TodDrawString(g, _S("Changes take effect immediately."), 212, 329, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);
@@ -319,7 +319,7 @@ void NewOptionsDialog::Draw(Sexy::Graphics* g)
     }
     else
     {
-        TodDrawString(g, _S("Pause When Unfocused"), 274, 180, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
+        TodDrawString(g, _S("Pause When Unfocused"), 274, 194, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_RIGHT);
         if (!mGameActionsAvailable[0] && !mGameActionsAvailable[1] && !mGameActionsAvailable[2])
         {
             TodDrawString(g, _S("Turn off to keep playing"), 212, 284, FONT_DWARVENTODCRAFT12, aTextColor, DrawStringJustification::DS_ALIGN_CENTER);

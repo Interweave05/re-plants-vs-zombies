@@ -30,17 +30,21 @@ void DrawStoneButton(Graphics* g, int x, int y, int theWidth, int theHeight, boo
 	}
 
 	int aMiddleWidth = std::max(0, theWidth - aLeftImage->mWidth - aRightImage->mWidth);
-	g->DrawImage(aLeftImage, aImageX, y);
+	// Fit stone slices to the control height so compact buttons keep their bottom edge.
+	g->DrawImage(aLeftImage, Rect(aImageX, y, aLeftImage->mWidth, theHeight),
+		Rect(0, 0, aLeftImage->mWidth, aLeftImage->mHeight));
 	aImageX += aLeftImage->mWidth;
 	while (aMiddleWidth > 0)
 	{
 		// Short tabs and dropdowns also need the final partial tile.
 		int aTileWidth = std::min(aMiddleWidth, aMiddleImage->mWidth);
-		g->DrawImage(aMiddleImage, aImageX, y, Rect(0, 0, aTileWidth, aMiddleImage->mHeight));
+		g->DrawImage(aMiddleImage, Rect(aImageX, y, aTileWidth, theHeight),
+			Rect(0, 0, aTileWidth, aMiddleImage->mHeight));
 		aImageX += aTileWidth;
 		aMiddleWidth -= aTileWidth;
 	}
-	g->DrawImage(aRightImage, aImageX, y);
+	g->DrawImage(aRightImage, Rect(aImageX, y, aRightImage->mWidth, theHeight),
+		Rect(0, 0, aRightImage->mWidth, aRightImage->mHeight));
 
 	g->SetFont(isHighLighted ? Sexy::FONT_DWARVENTODCRAFT18BRIGHTGREENINSET : Sexy::FONT_DWARVENTODCRAFT18GREENINSET);
 	aFontX += (theWidth - Sexy::FONT_DWARVENTODCRAFT18GREENINSET->StringWidth(theLabel)) / 2 + 1;
