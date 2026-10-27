@@ -7582,12 +7582,12 @@ void Zombie::StopZombieSound()
 }
 
 //0x530950
-void Zombie::ApplyChill(bool theIsIceTrap)
+void Zombie::ApplyChill(bool theIsIceTrap, bool thePlaySound)
 {
     if (!CanBeChilled())
         return;
 
-    if (mChilledCounter == 0)
+    if (mChilledCounter == 0 && thePlaySound)
     {
         mApp->PlayFoley(FoleyType::FOLEY_FROZEN);
     }
@@ -7800,7 +7800,7 @@ int Zombie::TakeHelmDamage(int theDamage, unsigned int theDamageFlags)
     mHelmHealth -= aDamageActual;
     if (TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_FREEZE))
     {
-        ApplyChill(false);
+        ApplyChill(false, !TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_SILENT_CHILL));
     }
     if (mHelmHealth == 0)
     {
@@ -7901,7 +7901,7 @@ void Zombie::TakeBodyDamage(int theDamage, unsigned int theDamageFlags)
 
     if (TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_FREEZE))
     {
-        ApplyChill(false);
+        ApplyChill(false, !TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_SILENT_CHILL));
     }
 
     int aBodyHealthOrigin = mBodyHealth;

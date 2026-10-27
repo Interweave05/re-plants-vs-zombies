@@ -401,6 +401,10 @@ unsigned int Projectile::GetDamageFlags(Zombie* theZombie)
 	{
 		SetBit(aDamageFlags, (int)DamageFlags::DAMAGE_FREEZE, true);
 	}
+	if (mProjectileType == ProjectileType::PROJECTILE_SNOWPEA)
+	{
+		SetBit(aDamageFlags, (int)DamageFlags::DAMAGE_SILENT_CHILL, true);
+	}
 
 	return aDamageFlags;
 }
@@ -766,6 +770,9 @@ void Projectile::UpdateMotion()
 //0x46DD30
 void Projectile::PlayImpactSound(Zombie* theZombie)
 {
+	if (mProjectileType == ProjectileType::PROJECTILE_SNOWPEA && theZombie)
+		return;
+
 	bool aPlayHelmSound = true;
 	bool aPlaySplatSound = true;
 	if (mProjectileType == ProjectileType::PROJECTILE_KERNEL)

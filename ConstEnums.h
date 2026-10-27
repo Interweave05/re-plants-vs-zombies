@@ -229,7 +229,8 @@ enum DamageFlags
     DAMAGE_FREEZE = 2,
     DAMAGE_DOESNT_CAUSE_FLASH = 3,
     DAMAGE_DOESNT_LEAVE_BODY = 4,
-    DAMAGE_SPIKE = 5
+    DAMAGE_SPIKE = 5,
+    DAMAGE_SILENT_CHILL = 6
 };
 enum DamageRangeFlags
 {
