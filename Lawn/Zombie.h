@@ -187,7 +187,7 @@ public:
     void                            TakeDamage(int theDamage, unsigned int theDamageFlags);
     /*inline*/ void                 SetRow(int theRow);
     float                           GetPosYBasedOnRow(int theRow);
-    void                            ApplyChill(bool theIsIceTrap, bool thePlaySound = true);
+    void                            ApplyChill(bool theIsIceTrap);
     void                            UpdateZombieBungee();
     void                            BungeeLanding();
     bool                            EffectedByDamage(unsigned int theDamageRangeFlags);
